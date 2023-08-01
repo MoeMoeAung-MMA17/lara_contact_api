@@ -1,0 +1,59 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Contact;
+use App\Models\SearchRecord;
+use App\Models\User;
+use Illuminate\Http\Request;
+
+class SearchRecordController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    public function index()
+    {
+        $users = User::when(request('keyword'),function($q){
+            $keyword = request('keyword');
+            return $keyword;
+            $q->orWhere("name","like","%$keyword%")
+                ->orWhere("email","like","%$keyword%");
+        })
+            ->latest("id")
+            ->paginate(10)->withQueryString();
+
+        return $users;
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request)
+    {
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(SearchRecord $searchRecord)
+    {
+        //
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, SearchRecord $searchRecord)
+    {
+        //
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(SearchRecord $searchRecord)
+    {
+        //
+    }
+}
