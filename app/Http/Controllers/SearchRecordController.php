@@ -13,39 +13,27 @@ class SearchRecordController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
-    {
-    //     $contacts = Contact::latest("id")->paginate(5)->withQueryString();
-        // return ContactResource::collection($contacts);
+    // public function index()
+    // {
+    //     //     $contacts = Contact::latest("id")->paginate(5)->withQueryString();
+    //     // return ContactResource::collection($contacts);
+    //     // }
+    //     $searchRecords = SearchRecord::where("user_id", auth()->id())
+    //         ->latest("id")
+    //         ->limit(5)
+    //         ->get();
+    //     return response()->json([
+    //         "records" => $searchRecords
+    //     ]);
     // }
-    
-
-    $contacts = Contact::when(request()->has("keyword"), function ($query) {
-        $query->where(function (Builder $builder) {
-            $keyword = request()->keyword;
-
-            $builder->where("name", "like", "%" . $keyword . "%");
-            
-        });
-    })
-        ->when(request()->has('show') == "trash",fn($query) => $query->withTrashed() )
-
-        
-        // ->dd()
-        ->latest("id")
-        ->paginate(7)->withQueryString();
-
-        return ContactResource::collection($contacts);
-
-    }
 
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
-    {
-        //
-    }
+    // public function create()
+    // {
+    //     //
+    // }
 
     /**
      * Store a newly created resource in storage.

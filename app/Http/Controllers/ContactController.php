@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\ContactDetailResource;
 use App\Http\Resources\ContactResource;
 use App\Models\Contact;
+use App\Models\SearchRecord;
 use Illuminate\Auth\Access\Gate;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -24,34 +25,32 @@ class ContactController extends Controller
      */
     public function index()
     {
-    //     $contacts = Contact::latest("id")->paginate(5)->withQueryString();
-    //     return ContactResource::collection($contacts);
+        //     $contacts = Contact::latest("id")->paginate(5)->withQueryString();
+        //     return ContactResource::collection($contacts);
 
-    $contacts = Contact::when(request()->has("keyword"), function ($query) {
-        $query->where(function (Builder $builder) {
-            $keyword = request()->keyword;
+        $contacts = Contact::when(request()->has("keyword"), function ($query) {
+            $query->where(function (Builder $builder) {
+                $keyword = request()->keyword;
 
-            $builder->where("name", "like", "%" . $keyword . "%");
-            
-        });
-    })
-        ->when(request()->has('show') == "trash",fn($query) => $query->withTrashed() )
+                SearchRecord::create([
+                    "keywords" => $keyword,
+                    "user_id" => auth()->id()
 
-        
-        ->when(request()->has('name'), function ($query) {
-            $sortType = request()->title ?? 'asc';
-            $query->orderBy("name", $sortType);
+                ]);
+
+                $builder->where("name", "LIKE", "%" . $keyword . "%");
+                $builder->orWhere("phone_number", "LIKE", "%" . $keyword . "%");
+            });
         })
-        
-        // ->dd()
+        ->where("user_id", Auth::id())
         ->latest("id")
-        ->paginate(7)->withQueryString();
+        ->paginate(5)
+        ->withQueryString();
 
         return ContactResource::collection($contacts);
-
     }
-        
-    
+
+
     /**
      * Store a newly created resource in storage.
      */
@@ -63,7 +62,7 @@ class ContactController extends Controller
             "phone_number" => "required"
         ]);
 
-        
+
         $contact = new Contact();
         $contact->name = $request->name;
         $contact->country_code = $request->country_code;
@@ -78,15 +77,15 @@ class ContactController extends Controller
      */
     public function show(string $id)
     {
-        
+
 
         $contact = Contact::find($id);
-        if(is_null($contact)){
+        if (is_null($contact)) {
             return response()->json([
                 // "success" => false,
                 "message" => "Contact not found",
 
-            ],404);
+            ], 404);
         }
 
         return response()->json([
@@ -107,12 +106,12 @@ class ContactController extends Controller
         ]);
 
         $contact = Contact::find($id);
-        if(is_null($contact)){
+        if (is_null($contact)) {
             return response()->json([
                 // "success" => false,
                 "message" => "Contact not found",
 
-            ],404);
+            ], 404);
         }
 
         // $contact->update([
@@ -123,15 +122,15 @@ class ContactController extends Controller
 
         // $contact->update($request->all());
 
-        if($request->has('name')){
+        if ($request->has('name')) {
             $contact->name = $request->name;
         }
 
-        if($request->has('country_code')){
+        if ($request->has('country_code')) {
             $contact->country_code = $request->country_code;
         }
 
-        if($request->has('phone_number')){
+        if ($request->has('phone_number')) {
             $contact->phone_number = $request->phone_number;
         }
 
@@ -148,12 +147,12 @@ class ContactController extends Controller
     public function destroy(string $id)
     {
         $contact = Contact::find($id);
-        if(is_null($contact)){
+        if (is_null($contact)) {
             return response()->json([
                 // "success" => false,
                 "message" => "Contact not found",
 
-            ],404);
+            ], 404);
         }
         $contact->delete();
 
@@ -162,4 +161,62 @@ class ContactController extends Controller
             "message" => "Contact is deleted",
         ]);
     }
+
+    public function multipleDelete(Request $request)
+    {
+        if (!is_array($request->id)) {
+            return response()->json([
+                "message" => "wrong"
+            ]);
+        }
+        $id = $request->id;
+        Contact::where("user_id", Auth::id())->whereIn("id", $id)->delete();
+        return response()->json([
+            "message" => "contact delete successful"
+        ]);
+    }
+    public function trash()
+    {
+        $contact = Contact::onlyTrashed()
+            ->where("user_id", Auth::id())->get();
+        return response()->json([
+            $contact
+        ]);
+    }
+    public function restore($id)
+    {
+        $contact = Contact::onlyTrashed()
+            ->where("user_id", Auth::id())
+            ->findOrFail($id)
+            ->restore();
+        return response()->json([
+            "message" => "restore successful"
+        ]);
+    }
+    public function restoreAll($id)
+    {
+        $contact = Contact::onlyTrashed()
+            ->where("user_id", Auth::id())
+            ->restore();
+        return response()->json([
+            "message" => "all restore  successful"
+        ]);
+    }
+    public function forceDelete($id){
+        $contact = Contact::withTrashed()->findOrFail($id);
+        $contact->forceDelete();
+        return response()->json([
+              "message"  => "contact delete successful"
+        ]);
+    }
+    public function emptyBin(){
+        Contact::onlyTrashed()
+                ->where("user_id",Auth::id())  
+                ->forceDelete();
+                
+                return response()->json([
+                    "message"  => "contact delete successful"
+              ]);
+    }
+   
 }

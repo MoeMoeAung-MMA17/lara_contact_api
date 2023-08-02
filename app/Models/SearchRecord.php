@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class SearchRecord extends Model
 {
     use HasFactory;
+    protected $fillable = ["keywords","user_id"];
     public function user(){
         return $this->belongsTo(User::class);
     }
