@@ -6,6 +6,7 @@ use App\Http\Resources\ContactDetailResource;
 use App\Http\Resources\ContactResource;
 use App\Models\Contact;
 use App\Models\SearchRecord;
+use Database\Seeders\ContactSeeder;
 use Illuminate\Auth\Access\Gate;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -25,24 +26,18 @@ class ContactController extends Controller
      */
     public function index()
     {
-        //     $contacts = Contact::latest("id")->paginate(5)->withQueryString();
-        //     return ContactResource::collection($contacts);
+        // $contacts = Contact::latest("id")->paginate(10)->withQueryString();
+        // return ContactResource::collection($contacts);
+
 
         $contacts = Contact::when(request()->has("keyword"), function ($query) {
             $query->where(function (Builder $builder) {
                 $keyword = request()->keyword;
 
-                SearchRecord::create([
-                    "keywords" => $keyword,
-                    "user_id" => auth()->id()
-
-                ]);
-
                 $builder->where("name", "LIKE", "%" . $keyword . "%");
                 $builder->orWhere("phone_number", "LIKE", "%" . $keyword . "%");
             });
         })
-        ->where("user_id", Auth::id())
         ->latest("id")
         ->paginate(5)
         ->withQueryString();
@@ -66,6 +61,7 @@ class ContactController extends Controller
         $contact = new Contact();
         $contact->name = $request->name;
         $contact->country_code = $request->country_code;
+        $contact->phone_number = $request->phone_number;
         $contact->user_id = Auth::id();
         $contact->save();
 
@@ -202,21 +198,22 @@ class ContactController extends Controller
             "message" => "all restore  successful"
         ]);
     }
-    public function forceDelete($id){
+    public function forceDelete($id)
+    {
         $contact = Contact::withTrashed()->findOrFail($id);
         $contact->forceDelete();
         return response()->json([
-              "message"  => "contact delete successful"
+            "message"  => "contact delete successful"
         ]);
     }
-    public function emptyBin(){
+    public function emptyBin()
+    {
         Contact::onlyTrashed()
-                ->where("user_id",Auth::id())  
-                ->forceDelete();
-                
-                return response()->json([
-                    "message"  => "contact delete successful"
-              ]);
+            ->where("user_id", Auth::id())
+            ->forceDelete();
+
+        return response()->json([
+            "message"  => "contact delete successful"
+        ]);
     }
-   
 }

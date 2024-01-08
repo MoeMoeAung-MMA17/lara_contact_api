@@ -13,38 +13,104 @@ class FavoriteController extends Controller
     /**
      * Display a listing of the resource.
      */
-    // public function index()
-    // {
+    public function index()
+    {
        
-    //    $favorites = Favorite::where('user_id',Auth::id())->get();
-    //    return new FavoriteDetailResource($favorites);
+       $favorites = Favorite::where('user_id',Auth::id())->get();
+    //    return $favorites;
+       return new FavoriteDetailResource($favorites);
 
 
        
-    // }
+    }
 
     /**
      * Store a newly created resource in storage.
      */
-    // public function store(Request $request)
-    // {
+    public function store(Request $request)
+    {
         
-    //     $favorite = Favorite::create([
-    //         "user_id" => Auth::id(),
-    //         "contact_id"=> $request->contact_id
+        // $favorite = Favorite::create([
+        //     "user_id" => Auth::id(),
+        //     "contact_id"=> $request->contact_id
 
+        // ]);
+        // return $favorite;
+        // return response()->json(['message'=>'Favorite added successfully'],201);
+      
+    }
+    public function markAsFavorite(Request $request)
+    {
+        $contact = Contact::find($request->id);
+        // return $contact;
+
+        if (is_null($contact)) {
+            return response()->json([
+                // "success" => false,
+                "message" => "Contact not found",
+
+            ], 404);
+        }
+
+        $user = $request->user();
+        $favorite = Favorite::where([
+            'user_id' => $user->id,
+            'contact_id' => $contact->id,
+        ])->first();
+
+        if ($favorite) {
+            return response()->json(['message' => 'Contact already in favorites'], 200);
+        }
+        $favorite = Favorite::Create([
+            'user_id' => $user->id,
+            'contact_id' => $contact->id,
+        ]);
+
+
+        return response()->json([
+            'message' => 'Contact marked as favorite',
+            "favorite" => $favorite
+        
+        ], 200);
+    }
+
+    // public function removeFavorite(Request $request)
+    // {
+    //     $contact = Contact::find($request->id);
+    //     if (is_null($contact)) {
+    //         return response()->json([
+    //             // "success" => false,
+    //             "message" => "Contact not found",
+
+    //         ], 404);
+    //     }
+
+
+    //     $user = $request->user();
+    //     $favorite = Favorite::where([
+    //         'user_id' => $user->id,
+    //         'contact_id' => $contact->id,
+    //     ])->first();
+
+    //     $favorite->delete();
+
+    //     return response()->json([
+    //         "favorite" => $favorite,
+    //         "message" => "Favorite removed from contact",
     //     ]);
-    //     // return response()->json(['message'=>'Favorite added successfully'],201);
-    //     return new FavoriteDetailResource($favorite);
-
     // }
 
+   
     /**
      * Display the specified resource.
      */
     public function show(Favorite $favorite)
     {
-        //
+        $favorite = Favorite::find($favorite);
+        
+        if (is_null($favorite)) {
+            return response()->json(['message' => 'Favorite not found'], 404);
+        }
     }
 
     /**
@@ -58,22 +124,30 @@ class FavoriteController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    // public function destroy(Favorite $favorite)
-    // {
-    //     $favorite = Auth::user()->favorites->find($favorite);
-    //     if(is_null($favorite)){
-    //         return response()->json([
-    //             // "success" => false,
-    //             "message" => "Favorite not found",
+    public function destroy(Request $request)
+    {
+    
+        $contact = Contact::find($request->id);
 
-    //         ],404);
-    //     }
-    //     $favorite->delete();
+        if (is_null($contact)){
+            return response()->json(['message' => 'Contact not found'], 404);
+        }
 
-    //     // return response()->json([],204);
-    //     return response()->json([
-    //         "message" => "Favorite is deleted",
-    //     ]);
+        $user = $request->user();
 
-    // }
+        // Find the favorite relationship between the user and the contact
+        $favorite = Favorite::where([
+            'user_id' => $user->id,
+            'contact_id' => $contact->id,
+        ])->first();
+
+        if (!$favorite) {
+            return response()->json(['message' => 'Contact is not in favorites'], 404);
+        }
+
+        // Remove the favorite relationship
+        $favorite->delete();
+
+        return response()->json(['message' => 'Contact removed from favorites'], 200);
+    }
 }

@@ -42,8 +42,11 @@ Route::prefix("v1")->group(function () {
                 });
 
                 Route::controller(FavoriteController::class)->group(function () {
-                        Route::post("favorite/{id}", "store");
+                        // Route::post("favorite/{id}", "store");
+                        Route::post("favorite/{id}", "markAsFavorite");
+                        Route::delete("favorite/{id}", "destroy");
                         Route::get("favorite", "index");
+                        Route::get("favorite/{id}", "show");
                         Route::delete("favorite/{id}", "destroy");
                     });
             
